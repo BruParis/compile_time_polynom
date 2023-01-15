@@ -22,11 +22,15 @@ struct gcd {
   static constexpr auto val = _gcd_aux<abs(a), b>::val;
 };
 
-template <int p, unsigned int q>
+template <bool pos, unsigned int p, unsigned int q>
 struct quot {};
 
-template <int p, unsigned int q>
-std::ostream &operator<<(std::ostream &os, quot<p, q> r) {
+template <bool pos, unsigned int p, unsigned int q>
+constexpr std::ostream &operator<<(std::ostream &os, quot<pos, p, q> r) {
+  if (!pos) {
+    os << "-";
+  }
+
   os << p;
   if (q != 1) {
     os << "/" << q;
@@ -35,17 +39,23 @@ std::ostream &operator<<(std::ostream &os, quot<p, q> r) {
   return os;
 }
 
-template <int p, unsigned int q, bool _>
-struct _rat_aux {};
+template <bool pos, unsigned int p, unsigned int q, bool _>
+struct _rat_aux2 {};
 
-template <int p, unsigned int q>
-using rational = typename _rat_aux<p, q, gcd<p, q>::val == 1>::type;
+template <bool pos, unsigned int p, unsigned int q>
+struct _rat_aux {
+  using type = typename _rat_aux2<pos, p, q, gcd<p, q>::val == 1>::type;
+};
 
-template <int p, unsigned int q>
-struct _rat_aux<p, q, true> {
-  using type = quot<p, q>;
+template <bool pos, unsigned int p, unsigned int q>
+struct _rat_aux2<pos, p, q, true> {
+  using type = quot<pos, p, q>;
 };
-template <int p, unsigned int q>
-struct _rat_aux<p, q, false> {
-  using type = rational<p / gcd<p, q>::val, q / gcd<p, q>::val>;
+template <bool pos, unsigned int p, unsigned int q>
+struct _rat_aux2<pos, p, q, false> {
+  using type =
+      typename _rat_aux<pos, p / gcd<p, q>::val, q / gcd<p, q>::val>::type;
 };
+
+template <int p, int q>
+using rational = typename _rat_aux<(p * q) >= 0, abs(p), abs(q)>::type;
